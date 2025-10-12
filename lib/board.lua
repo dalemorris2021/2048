@@ -47,14 +47,29 @@ function Board:key_pressed(key)
     if key == "left" then
         for column = 1, num_columns do
             for row = 1, num_rows do
-                if column - 1 >= 1 then
-                    if self:get_tile(row, column - 1):get_value() == 0 then
-                        self:set_tile(row, column - 1, self:get_tile(row, column))
+                if self:get_tile(row, column):get_value() ~= 0 then
+                    local target_coords = {}
+                    target_coords.row = row
+
+                    local i = 1
+                    while column - i >= 1 and self:get_tile(row, column - i):get_value() == 0 do
+                        i = i + 1
+                    end
+
+                    if column - i < 1 then
+                        target_coords.column = column - i + 1
+                    else
+                        target_coords.column = column - i
+                    end
+
+                    if self:get_tile(target_coords.row, target_coords.column):get_value() == 0 then
+                        self:set_tile(target_coords.row, target_coords.column, self:get_tile(row, column))
                         self:set_tile(row, column, Tile(0))
                         acted = true
-                    elseif self:get_tile(row, column):get_value() == self:get_tile(row, column - 1):get_value() then
-                        local value = self:get_tile(row, column):get_value() + self:get_tile(row, column - 1):get_value()
-                        self:set_tile(row, column - 1, Tile(value))
+                    elseif self:get_tile(row, column):get_value() == self:get_tile(target_coords.row, target_coords.column):get_value() then
+                        local value = self:get_tile(row, column):get_value() +
+                            self:get_tile(target_coords.row, target_coords.column):get_value()
+                        self:set_tile(target_coords.row, target_coords.column, Tile(value))
                         self:set_tile(row, column, Tile(0))
                         acted = true
                     end
@@ -64,7 +79,7 @@ function Board:key_pressed(key)
     elseif key == "right" then
         for column = num_columns, 1, -1 do
             for row = 1, num_rows do
-                if column + 1 <= num_columns then
+                if self:get_tile(row, column):get_value() ~= 0 and column + 1 <= num_columns then
                     if self:get_tile(row, column + 1):get_value() == 0 then
                         self:set_tile(row, column + 1, self:get_tile(row, column))
                         self:set_tile(row, column, Tile(0))
