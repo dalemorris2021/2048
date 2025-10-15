@@ -42,77 +42,39 @@ end
 function Board:key_pressed(key)
     local num_rows = #self.map
     local num_columns = #self.map[1]
-    local acted = false
+    local coords_list = {}
+
+    local function insert_coords(coords)
+        table.insert(coords_list, coords)
+    end
 
     if key == "left" then
         for column = 1, num_columns do
             for row = 1, num_rows do
-                if column - 1 >= 1 then
-                    if self:get_tile(row, column - 1):get_value() == 0 then
-                        self:set_tile(row, column - 1, self:get_tile(row, column))
-                        self:set_tile(row, column, Tile(0))
-                        acted = true
-                    elseif self:get_tile(row, column):get_value() == self:get_tile(row, column - 1):get_value() then
-                        local value = self:get_tile(row, column):get_value() + self:get_tile(row, column - 1):get_value()
-                        self:set_tile(row, column - 1, Tile(value))
-                        self:set_tile(row, column, Tile(0))
-                        acted = true
-                    end
-                end
+                insert_coords({ row = row, column = column })
             end
         end
     elseif key == "right" then
         for column = num_columns, 1, -1 do
             for row = 1, num_rows do
-                if column + 1 <= num_columns then
-                    if self:get_tile(row, column + 1):get_value() == 0 then
-                        self:set_tile(row, column + 1, self:get_tile(row, column))
-                        self:set_tile(row, column, Tile(0))
-                        acted = true
-                    elseif self:get_tile(row, column):get_value() == self:get_tile(row, column + 1):get_value() then
-                        local value = self:get_tile(row, column):get_value() + self:get_tile(row, column + 1):get_value()
-                        self:set_tile(row, column + 1, Tile(value))
-                        self:set_tile(row, column, Tile(0))
-                        acted = true
-                    end
-                end
+                insert_coords({ row = row, column = column })
             end
         end
     elseif key == "up" then
         for row = 1, num_rows do
             for column = 1, num_columns do
-                if self:get_tile(row, column):get_value() ~= 0 and row - 1 >= 1 then
-                    if self:get_tile(row - 1, column):get_value() == 0 then
-                        self:set_tile(row - 1, column, self:get_tile(row, column))
-                        self:set_tile(row, column, Tile(0))
-                        acted = true
-                    elseif self:get_tile(row, column):get_value() == self:get_tile(row - 1, column):get_value() then
-                        local value = self:get_tile(row, column):get_value() + self:get_tile(row - 1, column):get_value()
-                        self:set_tile(row - 1, column, Tile(value))
-                        self:set_tile(row, column, Tile(0))
-                        acted = true
-                    end
-                end
+                insert_coords({ row = row, column = column })
             end
         end
     elseif key == "down" then
         for row = num_rows, 1, -1 do
             for column = 1, num_columns do
-                if self:get_tile(row, column):get_value() ~= 0 and row + 1 <= num_rows then
-                    if self:get_tile(row + 1, column):get_value() == 0 then
-                        self:set_tile(row + 1, column, self:get_tile(row, column))
-                        self:set_tile(row, column, Tile(0))
-                        acted = true
-                    elseif self:get_tile(row, column):get_value() == self:get_tile(row + 1, column):get_value() then
-                        local value = self:get_tile(row, column):get_value() + self:get_tile(row + 1, column):get_value()
-                        self:set_tile(row + 1, column, Tile(value))
-                        self:set_tile(row, column, Tile(0))
-                        acted = true
-                    end
-                end
+                insert_coords({ row = row, column = column })
             end
         end
     end
+
+    local acted = self:slide_tiles(coords_list)
 
     if acted then
         self:set_random_tile()
@@ -129,6 +91,27 @@ function Board:set_tile(row, column, tile)
     tile.size = 0.9 * self.size / 4
 
     self.map[row][column] = tile
+end
+
+function Board:slide_tiles(coords_list)
+    local acted = false
+    for i, coords in ipairs(coords_list) do
+        if i > 4 then
+            if self:get_tile(coords_list[i - 4].row, coords_list[i - 4].column):get_value() == 0 then
+                self:set_tile(coords_list[i - 4].row, coords_list[i - 4].column, self:get_tile(coords.row, coords.column))
+                self:set_tile(coords.row, coords.column, Tile(0))
+                acted = true
+            elseif self:get_tile(coords.row, coords.column):get_value() == self:get_tile(coords_list[i - 4].row, coords_list[i - 4].column):get_value() then
+                local value = self:get_tile(coords.row, coords.column):get_value() +
+                    self:get_tile(coords_list[i - 4].row, coords_list[i - 4].column):get_value()
+                self:set_tile(coords_list[i - 4].row, coords_list[i - 4].column, Tile(value))
+                self:set_tile(coords.row, coords.column, Tile(0))
+                acted = true
+            end
+        end
+    end
+
+    return acted
 end
 
 function Board:set_random_tile()
